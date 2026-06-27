@@ -29,52 +29,52 @@ is_api_mode = (mode != "LOCAL_MOCK")
 STYLES = [
     {
         "name": "Anime", 
-        "prompt": "masterpiece anime style illustration, digital painting, studio ghibli vibe, vibrant colors, clean lineart, aesthetic background",
+        "prompt": "masterpiece anime style illustration, breathtaking scenery, detailed anime character, makoto shinkai aesthetic, gorgeous lighting, vibrant colors, co mix wave films, key visual, 8k resolution, highly detailed",
         "mock_name": "Cartoon Edge"
     },
     {
         "name": "Pixar 3D", 
-        "prompt": "3d pixar animation style, cute character design, soft volumetric lighting, clay render aesthetic, octane render, disney style, cute",
+        "prompt": "gorgeous 3d pixar disney animation style, highly detailed character design, warm volumetric lighting, raytracing, octane render, stylized 3d art, masterpiece",
         "mock_name": "Clay Rendering"
     },
     {
         "name": "Chibi", 
-        "prompt": "chibi style, cute miniature 3d model, large expressive eyes, simplified details, pastel color palette, soft shadows",
+        "prompt": "ultra cute chibi 3d character style, glossy claymation, large expressive sparkling eyes, adorable, soft pastel colors, cinematic lighting, toy design, high quality, masterpiece",
         "mock_name": "Inverted Retro"
     },
     {
         "name": "Manga", 
-        "prompt": "manga sketch style, black and white ink drawing, high contrast, crosshatching, detailed comic book line art, screentone effect",
+        "prompt": "masterpiece manga page illustration, detailed black and white ink sketch, professional line art, crosshatching, dramatic screentone, dynamic action pose, clean comic book drawing",
         "mock_name": "Pencil Sketch"
     },
     {
         "name": "Cyberpunk", 
-        "prompt": "cyberpunk style, glowing neon lights, futuristic city streets, synthwave aesthetic, dark moody lighting, high tech details",
+        "prompt": "cyberpunk aesthetic, glowing neon lights, futuristic cityscape, dramatic synthwave color scheme, high contrast reflections, moody wet streets, blade runner style, high tech cybernetics, masterpiece",
         "mock_name": "Neon Cyan-Magenta"
     },
     {
         "name": "Oil Painting", 
-        "prompt": "oil painting style, rich thick brushstrokes, textured canvas, impressionist masterpiece, van gogh starry night aesthetic, warm dramatic lighting",
+        "prompt": "masterpiece impressionist oil painting style, rich thick textured brushstrokes, van gogh starry night aesthetic, impasto canvas texture, vibrant swirling colors, dramatic warm lighting",
         "mock_name": "Van Gogh Oil"
     },
     {
         "name": "Pixel Art", 
-        "prompt": "pixel art style, 8-bit retro video game character, pixelated details, limited vibrant color palette, arcade game aesthetic, cute",
+        "prompt": "masterpiece 16-bit pixel art style, highly detailed retro video game landscape and character, vibrant color palette, nostalgic arcade aesthetic, clean pixels, high quality",
         "mock_name": "8-Bit Game"
     },
     {
         "name": "Watercolor", 
-        "prompt": "soft watercolor painting style, light pastel colors, splatters, fine pencil outline details, organic texture, beautiful artistic flow",
+        "prompt": "exquisite watercolor illustration style, soft flowing pastel colors, artistic splatters, fine detailed ink outlines, textured watercolor paper, beautiful organic look, masterpiece",
         "mock_name": "Soft Watercolor"
     },
     {
         "name": "Blueprint", 
-        "prompt": "architectural blueprint style, technical blueprint drawing, white line art on deep blue grid background, schematics, clean technical details",
+        "prompt": "detailed technical blueprint schematics style, clean white line art drawing on dark blue grid background, engineering draft, precise architectural lines, high quality, masterpiece",
         "mock_name": "Blue Schematics"
     },
     {
         "name": "Pop Art", 
-        "prompt": "andy warhol pop art style, silk screen print, high contrast, bold saturated colors, block color design, retro vintage aesthetic",
+        "prompt": "andy warhol pop art style, bold retro silkscreen print, high contrast block colors, saturated neon color palette, iconic vintage pop culture aesthetic, masterpiece",
         "mock_name": "Warhol Screen"
     }
 ]
