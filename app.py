@@ -9,11 +9,21 @@ import requests
 import base64
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables relative to the script location
+script_dir = os.path.dirname(os.path.abspath(__file__))
+dotenv_path = os.path.join(script_dir, ".env")
+load_dotenv(dotenv_path, override=True)
+
 HF_KEY = os.getenv("HF_KEY")
 HF_MODEL = os.getenv("HF_MODEL", "runwayml/stable-diffusion-v1-5")
 CAMERA_INDEX = int(os.getenv("CAMERA_INDEX", "0"))
+
+# Debug print to verify load status (masked for security)
+if HF_KEY:
+    masked_key = HF_KEY[:10] + "..." if len(HF_KEY) > 10 else HF_KEY
+    print(f"[Debug] Loaded HF_KEY: {masked_key} (length: {len(HF_KEY)})")
+else:
+    print("[Debug] Loaded HF_KEY: None")
 
 # Determine Mode
 mode = "LOCAL_MOCK"
@@ -29,53 +39,53 @@ is_api_mode = (mode != "LOCAL_MOCK")
 STYLES = [
     {
         "name": "Anime", 
-        "prompt": "masterpiece anime style illustration, digital painting, studio ghibli vibe, vibrant colors, clean lineart, aesthetic background",
-        "mock_name": "Cartoon Edge"
+        "prompt": "masterpiece anime style illustration, breathtaking scenery, detailed anime character, makoto shinkai aesthetic, gorgeous lighting, vibrant colors, co mix wave films, key visual, 8k resolution, highly detailed",
+        "mock_name": "Makoto Shinkai"
     },
     {
         "name": "Pixar 3D", 
-        "prompt": "3d pixar animation style, cute character design, soft volumetric lighting, clay render aesthetic, octane render, disney style, cute",
-        "mock_name": "Clay Rendering"
+        "prompt": "gorgeous 3d pixar disney animation style, highly detailed character design, warm volumetric lighting, raytracing, octane render, stylized 3d art, masterpiece",
+        "mock_name": "Clay Bloom"
     },
     {
         "name": "Chibi", 
-        "prompt": "chibi style, cute miniature 3d model, large expressive eyes, simplified details, pastel color palette, soft shadows",
-        "mock_name": "Inverted Retro"
+        "prompt": "ultra cute chibi 3d character style, glossy claymation, large expressive sparkling eyes, adorable, soft pastel colors, cinematic lighting, toy design, high quality, masterpiece",
+        "mock_name": "Pastel Watercolor"
     },
     {
         "name": "Manga", 
-        "prompt": "manga sketch style, black and white ink drawing, high contrast, crosshatching, detailed comic book line art, screentone effect",
-        "mock_name": "Pencil Sketch"
+        "prompt": "masterpiece manga page illustration, detailed black and white ink sketch, professional line art, crosshatching, dramatic screentone, dynamic action pose, clean comic book drawing",
+        "mock_name": "Ink Halftone"
     },
     {
         "name": "Cyberpunk", 
-        "prompt": "cyberpunk style, glowing neon lights, futuristic city streets, synthwave aesthetic, dark moody lighting, high tech details",
-        "mock_name": "Neon Cyan-Magenta"
+        "prompt": "cyberpunk aesthetic, glowing neon lights, futuristic cityscape, dramatic synthwave color scheme, high contrast reflections, moody wet streets, blade runner style, high tech cybernetics, masterpiece",
+        "mock_name": "Neon Glow"
     },
     {
         "name": "Oil Painting", 
-        "prompt": "oil painting style, rich thick brushstrokes, textured canvas, impressionist masterpiece, van gogh starry night aesthetic, warm dramatic lighting",
-        "mock_name": "Van Gogh Oil"
+        "prompt": "masterpiece impressionist oil painting style, rich thick textured brushstrokes, van gogh starry night aesthetic, impasto canvas texture, vibrant swirling colors, dramatic warm lighting",
+        "mock_name": "Vibrant Impasto"
     },
     {
         "name": "Pixel Art", 
-        "prompt": "pixel art style, 8-bit retro video game character, pixelated details, limited vibrant color palette, arcade game aesthetic, cute",
-        "mock_name": "8-Bit Game"
+        "prompt": "masterpiece 16-bit pixel art style, highly detailed retro video game landscape and character, vibrant color palette, nostalgic arcade aesthetic, clean pixels, high quality",
+        "mock_name": "16-Bit Grid"
     },
     {
         "name": "Watercolor", 
-        "prompt": "soft watercolor painting style, light pastel colors, splatters, fine pencil outline details, organic texture, beautiful artistic flow",
-        "mock_name": "Soft Watercolor"
+        "prompt": "exquisite watercolor illustration style, soft flowing pastel colors, artistic splatters, fine detailed ink outlines, textured watercolor paper, beautiful organic look, masterpiece",
+        "mock_name": "Fluid Sketch"
     },
     {
         "name": "Blueprint", 
-        "prompt": "architectural blueprint style, technical blueprint drawing, white line art on deep blue grid background, schematics, clean technical details",
-        "mock_name": "Blue Schematics"
+        "prompt": "detailed technical blueprint schematics style, clean white line art drawing on dark blue grid background, engineering draft, precise architectural lines, high quality, masterpiece",
+        "mock_name": "Technical Grid"
     },
     {
         "name": "Pop Art", 
-        "prompt": "andy warhol pop art style, silk screen print, high contrast, bold saturated colors, block color design, retro vintage aesthetic",
-        "mock_name": "Warhol Screen"
+        "prompt": "andy warhol pop art style, bold retro silkscreen print, high contrast block colors, saturated neon color palette, iconic vintage pop culture aesthetic, masterpiece",
+        "mock_name": "Warhol 4-Grid"
     }
 ]
 
@@ -105,108 +115,183 @@ def get_distance(p1, p2):
 # Local Mock Filters
 def apply_mock_filter(crop_img, style_name):
     h, w = crop_img.shape[:2]
+    
     if style_name == "Anime":
-        # Cartoonizing filter - run at 256x256 for speed
+        # Anime Style: Bilateral smoothing + warm glowing colors + detail enhancement
         small = cv2.resize(crop_img, (256, 256))
-        color = cv2.bilateralFilter(small, d=7, sigmaColor=50, sigmaSpace=50)
+        smoothed = cv2.bilateralFilter(small, d=9, sigmaColor=40, sigmaSpace=40)
+        
+        # Color processing: Make it warm and vibrant (Makoto Shinkai feel)
+        hsv = cv2.cvtColor(smoothed, cv2.COLOR_BGR2HSV).astype(np.float32)
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.35, 0, 255) # Saturated
+        hsv[:, :, 2] = np.clip(hsv[:, :, 2] * 1.1, 0, 255)  # Brighter
+        color_boost = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+        
+        # Apply detail enhancement for an illustrative painted look
+        enhanced = cv2.detailEnhance(color_boost, sigma_s=10, sigma_r=0.15)
+        
+        # Combine with subtle outlines
         gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
-        gray = cv2.medianBlur(gray, 5)
-        edges = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 9, 9)
+        gray = cv2.medianBlur(gray, 3)
+        edges = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 9, 8)
         edges_color = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-        cartoon = cv2.bitwise_and(color, edges_color)
-        return cv2.resize(cartoon, (w, h))
+        
+        # Blend edges and color
+        anime = cv2.bitwise_and(enhanced, edges_color)
+        anime = cv2.addWeighted(anime, 0.85, enhanced, 0.15, 0)
+        return cv2.resize(anime, (w, h), interpolation=cv2.INTER_LINEAR)
         
     elif style_name == "Pixar 3D":
-        # Fast clay render look - downscale, filter, upscale
-        small = cv2.resize(crop_img, (128, 128))
-        small = cv2.bilateralFilter(small, d=9, sigmaColor=75, sigmaSpace=75)
-        return cv2.resize(small, (w, h), interpolation=cv2.INTER_CUBIC)
+        # Clay render + soft bloom/glow
+        small = cv2.resize(crop_img, (256, 256))
+        clay = cv2.bilateralFilter(small, d=13, sigmaColor=80, sigmaSpace=80)
+        
+        # Color processing
+        hsv = cv2.cvtColor(clay, cv2.COLOR_BGR2HSV).astype(np.float32)
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.25, 0, 255)
+        hsv[:, :, 2] = np.clip(hsv[:, :, 2] * 1.15, 0, 255)
+        clay_colored = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+        
+        # Bloom effect (soft overlay of bright areas)
+        blur_glow = cv2.GaussianBlur(clay_colored, (21, 21), 0)
+        bloom = cv2.addWeighted(clay_colored, 0.75, blur_glow, 0.25, 10)
+        return cv2.resize(bloom, (w, h), interpolation=cv2.INTER_CUBIC)
         
     elif style_name == "Chibi":
-        # Inverted Retro colors
-        return 255 - crop_img
+        # Pastel watercolor cute portrait
+        small = cv2.resize(crop_img, (256, 256))
+        hsv = cv2.cvtColor(small, cv2.COLOR_BGR2HSV).astype(np.float32)
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 0.85, 0, 255) # Soft pastel
+        hsv[:, :, 2] = np.clip(hsv[:, :, 2] + 40, 0, 255)   # High-key brightness
+        pastel = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+        
+        # Stylize
+        chibi = cv2.stylization(pastel, sigma_s=50, sigma_r=0.2)
+        
+        # Pink blush vignette
+        mask = np.zeros_like(chibi)
+        cv2.circle(mask, (128, 128), 160, (230, 190, 255), -1)
+        chibi_pink = cv2.addWeighted(chibi, 0.85, mask, 0.15, 0)
+        return cv2.resize(chibi_pink, (w, h), interpolation=cv2.INTER_LINEAR)
         
     elif style_name == "Manga":
-        # Black and white pencil sketch - run at 256x256 for speed
+        # Black and white pencil sketch + ink thresholding
         small = cv2.resize(crop_img, (256, 256))
-        sketch_gray, _ = cv2.pencilSketch(small, sigma_s=50, sigma_r=0.07, shade_factor=0.05)
-        sketch_color = cv2.cvtColor(sketch_gray, cv2.COLOR_GRAY2BGR)
-        return cv2.resize(sketch_color, (w, h))
+        sketch_gray, _ = cv2.pencilSketch(small, sigma_s=50, sigma_r=0.07, shade_factor=0.03)
+        sketch_gray = cv2.equalizeHist(sketch_gray)
+        _, thresh = cv2.threshold(sketch_gray, 180, 255, cv2.THRESH_BINARY)
+        manga = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+        return cv2.resize(manga, (w, h), interpolation=cv2.INTER_NEAREST)
         
     elif style_name == "Cyberpunk":
-        # Cyan-Magenta shift
-        cyber = crop_img.copy().astype(np.float32)
-        # Boost Blue/Red, lower Green
-        cyber[:, :, 0] = np.clip(cyber[:, :, 0] * 1.5, 0, 255) # Blue
-        cyber[:, :, 1] = np.clip(cyber[:, :, 1] * 0.4, 0, 255) # Green
-        cyber[:, :, 2] = np.clip(cyber[:, :, 2] * 1.4, 0, 255) # Red
-        return cyber.astype(np.uint8)
+        # Neon edge glowing on dark cool background
+        small = cv2.resize(crop_img, (256, 256))
+        dark = small.astype(np.float32)
+        dark[:, :, 0] = np.clip(dark[:, :, 0] * 1.5 + 20, 0, 255) # Blue channel boost
+        dark[:, :, 1] = np.clip(dark[:, :, 1] * 0.3, 0, 255)
+        dark[:, :, 2] = np.clip(dark[:, :, 2] * 0.8, 0, 255)
+        dark = dark.astype(np.uint8)
+        
+        # Detect edges
+        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+        edges = cv2.Canny(gray, 40, 120)
+        edges = cv2.dilate(edges, np.ones((2, 2), np.uint8), iterations=1)
+        
+        # Glow edge layer
+        neon = np.zeros_like(small)
+        neon[edges > 0] = [238, 0, 238] # Neon Magenta BGR
+        neon_glow = cv2.GaussianBlur(neon, (11, 11), 0)
+        
+        # Combine
+        cyber = cv2.addWeighted(dark, 0.7, neon_glow, 0.5, 0)
+        cyber[edges > 0] = [238, 238, 0] # Cyan edges BGR
+        return cv2.resize(cyber, (w, h), interpolation=cv2.INTER_LINEAR)
         
     elif style_name == "Oil Painting":
-        # Downscale, multi median blur, color boost
-        small = cv2.resize(crop_img, (128, 128))
-        for _ in range(3):
-            small = cv2.medianBlur(small, 5)
-        oil = cv2.resize(small, (w, h), interpolation=cv2.INTER_LINEAR)
+        # Stylized brush strokes + vivid color boost
+        oil = cv2.stylization(crop_img, sigma_s=60, sigma_r=0.45)
         hsv = cv2.cvtColor(oil, cv2.COLOR_BGR2HSV).astype(np.float32)
-        hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.3, 0, 255) # Saturated colors
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.4, 0, 255)
+        hsv[:, :, 2] = np.clip(hsv[:, :, 2] * 1.1, 0, 255)
         return cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
         
     elif style_name == "Pixel Art":
-        # 8-Bit game rendering using nearest neighbor downscale/upscale
-        small = cv2.resize(crop_img, (32, 32), interpolation=cv2.INTER_LINEAR)
-        hsv = cv2.cvtColor(small, cv2.COLOR_BGR2HSV).astype(np.float32)
-        hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.4, 0, 255) # Boost colors
-        saturated = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
-        return cv2.resize(saturated, (w, h), interpolation=cv2.INTER_NEAREST)
+        # 16-Bit game look
+        grid_w, grid_h = 64, 64
+        small = cv2.resize(crop_img, (grid_w, grid_h), interpolation=cv2.INTER_LINEAR)
+        quantized = (small // 48) * 48 + 24
+        hsv = cv2.cvtColor(quantized, cv2.COLOR_BGR2HSV).astype(np.float32)
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.5, 0, 255)
+        quantized_color = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+        return cv2.resize(quantized_color, (w, h), interpolation=cv2.INTER_NEAREST)
         
     elif style_name == "Watercolor":
-        # Blend smooth bilateral color mapping with faint Canny edge lines
+        # Stylized fluid color with delicate pencil outlines
+        watercolor = cv2.stylization(crop_img, sigma_s=40, sigma_r=0.15)
         small = cv2.resize(crop_img, (256, 256))
-        color = cv2.bilateralFilter(small, d=15, sigmaColor=120, sigmaSpace=120)
-        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(gray, 30, 80)
-        edges = cv2.dilate(edges, np.ones((2, 2), np.uint8), iterations=1)
-        edges_inv = cv2.bitwise_not(edges)
-        edges_color = cv2.cvtColor(edges_inv, cv2.COLOR_GRAY2BGR)
-        watercolor = cv2.bitwise_and(color, edges_color)
-        return cv2.resize(watercolor, (w, h))
+        sketch_gray, _ = cv2.pencilSketch(small, sigma_s=30, sigma_r=0.07, shade_factor=0.03)
+        sketch_color = cv2.resize(cv2.cvtColor(sketch_gray, cv2.COLOR_GRAY2BGR), (w, h))
+        return cv2.addWeighted(watercolor, 0.85, sketch_color, 0.15, 0)
         
     elif style_name == "Blueprint":
-        # Draw white edges on navy blue grid-like background
+        # Navy blue blueprint with white lines and grid
         gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(gray, 40, 100)
+        edges = cv2.Canny(gray, 40, 110)
         edges = cv2.dilate(edges, np.ones((2, 2), np.uint8), iterations=1)
+        
         bg = np.zeros_like(crop_img)
-        bg[:] = [120, 40, 10]  # Deep blue background BGR
-        bg[edges > 0] = [255, 255, 255] # White drawing lines
+        bg[:] = [100, 30, 5]
+        
+        # Grid lines
+        grid_space = 25
+        for x in range(0, w, grid_space):
+            cv2.line(bg, (x, 0), (x, h), (130, 45, 10), 1)
+        for y in range(0, h, grid_space):
+            cv2.line(bg, (0, y), (w, y), (130, 45, 10), 1)
+            
+        bg[edges > 0] = [255, 255, 230]
         return bg
         
     elif style_name == "Pop Art":
-        # Threshold image into four bright saturated blocky colors
-        gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
-        small = cv2.resize(gray, (128, 128))
-        small = cv2.medianBlur(small, 5)
-        quantized = (small // 64) * 64
-        pop = np.zeros((128, 128, 3), dtype=np.uint8)
-        pop[quantized < 64] = [0, 0, 255]      # Darks -> Bright Red
-        pop[(quantized >= 64) & (quantized < 128)] = [255, 0, 255] # Midtones -> Magenta
-        pop[(quantized >= 128) & (quantized < 192)] = [255, 255, 0] # Highlights -> Cyan
-        pop[quantized >= 192] = [0, 255, 255]   # Brights -> Yellow
-        return cv2.resize(pop, (w, h), interpolation=cv2.INTER_NEAREST)
+        # Andy Warhol 4-quadrant screen print
+        small = cv2.resize(crop_img, (128, 128))
+        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+        gray = cv2.medianBlur(gray, 5)
+        _, thresh = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)
         
+        q1 = np.zeros((128, 128, 3), dtype=np.uint8)
+        q1[:] = [180, 105, 255] # Pink
+        q1[thresh > 0] = [255, 255, 0] # Cyan
+        
+        q2 = np.zeros((128, 128, 3), dtype=np.uint8)
+        q2[:] = [0, 0, 255] # Red
+        q2[thresh > 0] = [0, 255, 255] # Yellow
+        
+        q3 = np.zeros((128, 128, 3), dtype=np.uint8)
+        q3[:] = [255, 0, 0] # Blue
+        q3[thresh > 0] = [0, 128, 255] # Orange
+        
+        q4 = np.zeros((128, 128, 3), dtype=np.uint8)
+        q4[:] = [0, 255, 0] # Green
+        q4[thresh > 0] = [128, 0, 128] # Purple
+        
+        top = np.hstack((q1, q2))
+        bottom = np.hstack((q3, q4))
+        grid = np.vstack((top, bottom))
+        return cv2.resize(grid, (w, h))
+
     return crop_img
 
 # API Client background thread worker
 def api_thread_worker(crop_img, prompt_text, style_idx):
-    global styled_image, is_processing
+    global styled_image, is_processing, is_api_mode, mode
     try:
         if mode == "HF_API":
             print(f"[API] Starting generation on Hugging Face for style: {STYLES[style_idx]['name']}...")
             _, buffer = cv2.imencode('.jpg', crop_img)
             img_base64 = base64.b64encode(buffer).decode('utf-8')
             
-            api_url = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
+            api_url = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}"
             headers = {
                 "Authorization": f"Bearer {HF_KEY}",
                 "Content-Type": "application/json"
@@ -215,9 +300,9 @@ def api_thread_worker(crop_img, prompt_text, style_idx):
                 "inputs": img_base64,
                 "parameters": {
                     "prompt": prompt_text,
-                    "strength": 0.6,
-                    "num_inference_steps": 25,
-                    "guidance_scale": 7.5
+                    "strength": 1.0,
+                    "num_inference_steps": 30,
+                    "guidance_scale": 10.0
                 }
             }
             
@@ -250,6 +335,11 @@ def api_thread_worker(crop_img, prompt_text, style_idx):
                     print(f"[API] Hugging Face model is loading (503). Please wait...")
             else:
                 print(f"[API] Hugging Face returned status code {resp.status_code}: {resp.text}")
+                if resp.status_code in [400, 403, 404]:
+                    is_api_mode = False
+                    mode = "LOCAL_MOCK"
+                    print("\n[System] Permanent API issue detected (Hugging Face has disabled free Image-to-Image models on this serverless tier).")
+                    print("[System] Automatically falling back to LOCAL MOCK mode with premium, gorgeous artistic filters!\n")
                 
     except Exception as e:
         print(f"[API] Exception occurred: {e}")
