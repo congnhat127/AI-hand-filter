@@ -9,11 +9,21 @@ import requests
 import base64
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables relative to the script location
+script_dir = os.path.dirname(os.path.abspath(__file__))
+dotenv_path = os.path.join(script_dir, ".env")
+load_dotenv(dotenv_path, override=True)
+
 HF_KEY = os.getenv("HF_KEY")
 HF_MODEL = os.getenv("HF_MODEL", "runwayml/stable-diffusion-v1-5")
 CAMERA_INDEX = int(os.getenv("CAMERA_INDEX", "0"))
+
+# Debug print to verify load status (masked for security)
+if HF_KEY:
+    masked_key = HF_KEY[:10] + "..." if len(HF_KEY) > 10 else HF_KEY
+    print(f"[Debug] Loaded HF_KEY: {masked_key} (length: {len(HF_KEY)})")
+else:
+    print("[Debug] Loaded HF_KEY: None")
 
 # Determine Mode
 mode = "LOCAL_MOCK"
@@ -215,9 +225,9 @@ def api_thread_worker(crop_img, prompt_text, style_idx):
                 "inputs": img_base64,
                 "parameters": {
                     "prompt": prompt_text,
-                    "strength": 0.6,
-                    "num_inference_steps": 25,
-                    "guidance_scale": 7.5
+                    "strength": 1.0,
+                    "num_inference_steps": 30,
+                    "guidance_scale": 10.0
                 }
             }
             
