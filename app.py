@@ -216,7 +216,7 @@ def api_thread_worker(crop_img, prompt_text, style_idx):
             _, buffer = cv2.imencode('.jpg', crop_img)
             img_base64 = base64.b64encode(buffer).decode('utf-8')
             
-            api_url = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
+            api_url = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}"
             headers = {
                 "Authorization": f"Bearer {HF_KEY}",
                 "Content-Type": "application/json"
